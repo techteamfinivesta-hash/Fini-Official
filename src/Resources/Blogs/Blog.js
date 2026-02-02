@@ -20,9 +20,9 @@ import I16 from "../Images/blogs/cash.png";
 import I17 from "../Images/blogs/IndiaUpiSys.png";
 import I18 from "../Images/blogs/economicgrowth.jpg";
 import I19 from "../Images/blogs/19.jpeg";
-import I22 from "./Blogpages/blog-images/ttt_tax_image1.jpg";
 import I20 from "../Images/blogs/20.jpeg";
 import I21 from "../Images/blogs/louvre-img.jpg";
+import I22 from "./Blogpages/blog-images/ttt_tax_image1.jpg";
 
 const blogs = [
   {
