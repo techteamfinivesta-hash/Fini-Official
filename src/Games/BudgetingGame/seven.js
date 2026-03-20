@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import "../BudgetingGame/styleGame.css";
 import buttonClickSound from "../BudgetingGame/BgameAudio/buttonclick.mp3";  
@@ -15,11 +15,7 @@ const Seven = () => {
     document.head.appendChild(style);
 
     const navigate = useNavigate(); 
-
     const clickSound = useRef(null); 
-    const bgAudio = useRef(null);
-
- 
     const [rangeValue, setRangeValue] = useState(25000);
 
     const handleRangeChange = (e) => {
@@ -30,14 +26,13 @@ const Seven = () => {
         if (clickSound.current) {
             clickSound.current.currentTime = 0; 
             clickSound.current.volume = 1; 
-            clickSound.current.play();  
-        } else {
-            console.error("Audio element not found!");
+            clickSound.current.play().catch(() => {});
         }
     };
 
     const goToEightPage = () => {
         playClickSound(); 
+
         const value = rangeValue;
         const result = Math.abs(32850 - value);
 
@@ -47,32 +42,35 @@ const Seven = () => {
         navigate('/games/budgetinggame/eight'); 
     };
 
+    /* ============================
+       GLOBAL BACKGROUND AUDIO
+       ============================ */
     useEffect(() => {
-        if (bgAudio.current) {
-            bgAudio.current.play();  
-            bgAudio.current.loop = true;  
+        if (!window.bgAudio) {
+            window.bgAudio = new Audio(backaudio);
+            window.bgAudio.loop = true;
+            window.bgAudio.volume = 0.3;
+            window.bgAudio.play().catch(err => console.error("BG audio error:", err));
         }
-       
-        return () => {
-            if (bgAudio.current) {
-                bgAudio.current.pause();  
-                bgAudio.current.currentTime = 0; 
-            }
-        };
-    }, []); 
+    }, []);
 
     return (
         <div className="BudgetingGame">
             <div className="upper">
                 <h1 id="heading">THE BUDGETING GAME!</h1>
-            </div><hr />
+            </div>
+            <hr />
 
             <div className="main1">
-                <p><span className="line">
-                    How much do you think it would cost if <br />
-                    you bought a snack and soda every day for one year?
-                </span></p><br />
+                <p>
+                    <span className="line">
+                        How much do you think it would cost if <br />
+                        you bought a snack and soda every day for one year?
+                    </span>
+                </p>
+                <br />
             </div>
+
             <br /><br /><br /><br />
 
             <input
@@ -85,19 +83,20 @@ const Seven = () => {
                 step="50"
                 onChange={handleRangeChange}
             />
+
             <div className="extreme">
                 <span id="zero"><b>Rs 0</b></span>
                 <span id="max"><b>Rs 50,000</b></span>
             </div>
+
             <p id="Value"> Rs <span id="rangeValue">{rangeValue}</span></p>
 
             <br />
+
             <div className="button">
                 <button onClick={goToEightPage} className="my-button">SUBMIT</button>
-                {/* <audio ref={clickSound} src={buttonClickSound} preload="auto"></audio>  */}
-            </div><br />
-
-            <audio ref={bgAudio} src={backaudio} preload="auto"></audio>
+                <audio ref={clickSound} src={buttonClickSound} preload="auto"></audio>
+            </div>
         </div>
     );
 };

@@ -7,37 +7,31 @@ import backaudio from "../BudgetingGame/BgameAudio/backaudio.mp3";
 const Two = () => {
     const navigate = useNavigate();  
     const clickSound = useRef(null); 
-    const bgAudio = useRef(null);  
 
+    // ✅ Initialize global background audio if it doesn't exist
+    useEffect(() => {
+        if (!window.bgAudio) {
+            window.bgAudio = new Audio(backaudio);
+            window.bgAudio.loop = true;
+            window.bgAudio.volume = 0.3;
+            window.bgAudio.play().catch(err => console.error("BG audio error:", err));
+        }
+    }, []);
+
+    // Play click sound on button
     const playClickSound = () => {
         if (clickSound.current) {
-            console.log("Playing sound...");
             clickSound.current.currentTime = 0; 
             clickSound.current.volume = 1; 
-            clickSound.current.play(); 
-        } else {
-            console.error("Audio element not found!");
+            clickSound.current.play().catch(err => console.error("Click sound error:", err));
         }
     };
 
     const goToThreePage = () => {
-        playClickSound(); 
+        playClickSound();
         navigate('/games/budgetinggame/three'); 
     };
 
-    useEffect(() => {
-        if (bgAudio.current) {
-            bgAudio.current.play(); 
-            bgAudio.current.loop = true; 
-        }
-
-        return () => {
-            if (bgAudio.current) {
-                bgAudio.current.pause(); 
-                bgAudio.current.currentTime = 0; 
-            }
-        };
-    }, []);  
     return (
         <div className="BudgetingGame">
             <div className="upper">
@@ -62,12 +56,8 @@ const Two = () => {
                 <button className="my-button" onClick={goToThreePage}>
                     BEGIN
                 </button>
-                {/* <audio ref={clickSound} src={buttonClickSound} preload="auto"></audio> */}
+                <audio ref={clickSound} src={buttonClickSound} preload="auto"></audio>
             </div>
-
-            <br /><br />
-
-            <audio ref={bgAudio} src={backaudio} preload="auto"></audio>
         </div>
     );
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import "../BudgetingGame/styleGame.css";
 import balance from "../BudgetingGame/BgameImages/balanceimage.png";
@@ -8,37 +8,30 @@ import backaudio from "../BudgetingGame/BgameAudio/backaudio.mp3";
 const One = () => {
     const navigate = useNavigate();  
     const clickSound = useRef(null); 
-    const bgAudio = useRef(null); 
 
-    const playClickSound = () => {
-        if (clickSound.current) {
-            console.log("Playing sound...");
-            clickSound.current.currentTime = 0; 
-            clickSound.current.volume = 1;  
-            clickSound.current.play(); 
-        } else {
-            console.error("Audio element not found!");
-        }
-    };
-
-    const goToTwoPage = () => {
-        playClickSound(); 
-        navigate('/games/budgetinggame/two');  
-    };
-
+    // ✅ Global audio reference
     useEffect(() => {
-        if (bgAudio.current) {
-            bgAudio.current.play();
-            bgAudio.current.loop = true; 
+        if (!window.bgAudio) {
+            window.bgAudio = new Audio(backaudio);
+            window.bgAudio.loop = true;
+            window.bgAudio.volume = 0.3;
+            window.bgAudio.play().catch(err => console.error(err));
+        }
+    }, []);
+
+    const startGame = () => {
+        // Play click sound first
+        if (clickSound.current) {
+            clickSound.current.currentTime = 0;
+            clickSound.current.volume = 1;
+            clickSound.current.play().catch(err => console.error(err));
         }
 
-        return () => {
-            if (bgAudio.current) {
-                bgAudio.current.pause(); 
-                bgAudio.current.currentTime = 0; 
-            }
-        };
-    }, []);  
+        // Navigate after a short delay
+        setTimeout(() => {
+            navigate('/games/budgetinggame/two');  
+        }, 50);
+    };
 
     return (
         <div className="BudgetingGame">
@@ -64,15 +57,11 @@ const One = () => {
             <br /><br />
             
             <div className="button">
-                <button className="my-button" onClick={goToTwoPage}>  
+                <button className="my-button" onClick={startGame}>  
                     START 
                 </button>
                 <audio ref={clickSound} src={buttonClickSound} preload="auto"></audio> 
             </div>
-            
-            <br />
-
-            <audio ref={bgAudio} src={backaudio} preload="auto"></audio>
         </div>
     );
 };
