@@ -13,10 +13,9 @@ const Four = () => {
     const [remainingValue, setRemainingValue] = useState(null);
     const [counter, setCounter] = useState(0);
     const [startCounter, setStartCounter] = useState(false);
+    const [showSakura, setShowSakura] = useState(false);
 
-    /* ============================
-       GLOBAL BACKGROUND AUDIO
-       ============================ */
+    
     useEffect(() => {
         if (!window.bgAudio) {
             window.bgAudio = new Audio(backaudio);
@@ -26,9 +25,7 @@ const Four = () => {
         }
     }, []);
 
-    /* ============================
-       LOAD LOCAL STORAGE VALUES
-       ============================ */
+    
     useEffect(() => {
         const value1 = localStorage.getItem("value1");
         const result1 = localStorage.getItem("result1");
@@ -42,28 +39,37 @@ const Four = () => {
 
             let comparisonText = "";
 
-            if (remaining === 0) comparisonText = "Bullseye! That's exactly what you thought.";
-            else if (remaining < 1000)
-                comparisonText =
-                    36500 > slider
-                        ? `Nice job! That's only ${remaining} more than you thought.`
-                        : `Nice job! That's only ${remaining} less than you thought.`;
-            else
-                comparisonText =
-                    36500 > slider
-                        ? `That's ${remaining} more than you thought!`
-                        : `That's ${remaining} less than you thought!`;
 
-            setComparisonStatement(comparisonText);
-        }
+            if (remaining === 0) {
+    comparisonText = "Bullseye! That's exactly what you thought.";
+    setShowSakura(true);
+} 
+else if (remaining < 1000) {
+    comparisonText =
+        36500 > slider
+            ? `Nice job! That's only ${remaining} more than you thought.`
+            : `Nice job! That's only ${remaining} less than you thought.`;
+
+    setShowSakura(true); 
+}
+else {
+    comparisonText =
+        36500 > slider
+            ? `That's ${remaining} more than you thought!`
+            : `That's ${remaining} less than you thought!`;
+}
+     setComparisonStatement(comparisonText);
+}
+    
+
 
         const timer = setTimeout(() => setStartCounter(true), 4000);
         return () => clearTimeout(timer);
     }, []);
 
-    /* ============================
-       COUNTER ANIMATION
-       ============================ */
+    
+       // COUNTER ANIMATION
+       
     useEffect(() => {
         if (startCounter && sliderValue !== null) {
             setCounter(sliderValue);
@@ -94,62 +100,80 @@ const Four = () => {
     };
 
     return (
-        <div className="BudgetingGame">
-            <div className="upper">
-                <h1 id="heading">THE BUDGETING GAME!</h1>
+    <div className="BudgetingGame">
+
+        {/* 🌸 Sakura overlay */}
+        {showSakura && (
+            <div className="sakura-container">
+                {[...Array(25)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="petal"
+                        style={{
+                            left: Math.random() * 100 + "%",
+                            animationDuration: (Math.random() * 3 + 2) + "s"
+                        }}
+                    />
+                ))}
             </div>
-            <hr />
+        )}
 
-            <div className="main1">
-                <p>
-                    <span className="line">
-                        You guessed :<br />
-                        <big>
-                            <big>
-                                <span
-                                    className="value"
-                                    style={{ color: "#73fd29", fontSize: "7vh" }}
-                                >
-                                    {sliderValue !== null ? `Rs ${sliderValue}` : ""}
-                                </span>
-                            </big>
-                        </big>
-                    </span>
-
-                    <span className="line">
-                        <br />The average cup of coffee costs Rs 100.<br />
-                    </span>
-
-                    <span className="line">
-                        If you bought one coffee a day for a whole year,
-                        <br />it would cost<br />
-                    </span>
-
-                    <span
-                        className="line"
-                        style={{ color: "#73fd29", fontSize: "7vh" }}
-                    >
-                        Rs {counter}
-                        <br />
-                    </span>
-
-                    <span className="line" style={{ fontSize: "4.3vh" }}>
-                        {comparisonStatement}
-                        <br />
-                    </span>
-                </p>
-            </div>
-
-            <br />
-
-            <div className="button">
-                <button onClick={goToFivePage} className="my-button">
-                    NEXT
-                </button>
-                <audio ref={clickSound} src={buttonClickSound} preload="auto" />
-            </div>
+        <div className="upper">
+            <h1 id="heading">THE BUDGETING GAME!</h1>
         </div>
+
+        <hr />
+
+        <div className="main1">
+            <p>
+                <span className="line">
+                    You guessed :<br />
+                    <big>
+                        <big>
+                            <span
+                                className="value"
+                                style={{ color: "#73fd29", fontSize: "7vh" }}
+                            >
+                                {sliderValue !== null ? `Rs ${sliderValue}` : ""}
+                            </span>
+                        </big>
+                    </big>
+                </span>
+
+                <span className="line">
+                    <br />The average cup of coffee costs Rs 100.<br />
+                </span>
+
+                <span className="line">
+                    If you bought one coffee a day for a whole year,
+                    <br />it would cost<br />
+                </span>
+
+                <span
+                    className="line"
+                    style={{ color: "#73fd29", fontSize: "7vh" }}
+                >
+                    Rs {counter}
+                    <br />
+                </span>
+
+                <span className="line" style={{ fontSize: "4.3vh" }}>
+                    {comparisonStatement}
+                    <br />
+                </span>
+            </p>
+        </div>
+
+        <br />
+
+        <div className="button">
+            <button onClick={goToFivePage} className="my-button">
+                NEXT
+            </button>
+            <audio ref={clickSound} src={buttonClickSound} preload="auto" />
+        </div>
+
+    </div>
     );
 };
-
 export default Four;
