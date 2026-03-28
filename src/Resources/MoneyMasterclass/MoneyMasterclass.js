@@ -10,12 +10,30 @@ import Session6 from "../Images/moneymasterclass/Session6.png";
 import Session7 from "../Images/moneymasterclass/Session07.jpeg";
 import MM1 from "../Images/moneymasterclass/MM1.png";
 import MM2 from "../Images/moneymasterclass/MM2.png";
+import MM3 from "C:/Users/LENOVO/Desktop/forkedfini5/Fini-Official/src/Resources/Images/moneymasterclass/MM3.png"
+import MM4 from "C:/Users/LENOVO/Desktop/forkedfini5/Fini-Official/src/Resources/Images/moneymasterclass/MM4.png"
 
 const mm = [
   {
+    id: 11,
+    title: "MM4",
+    description: "First Salary, First Investment",
+    image: MM4,
+    link: "https://www.canva.com/design/DAHE224kPps/6OP_hFlEkPpXvwqeNWkoSg/view?utm_content=DAHE224kPps&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h63bbcf1b5f#1"
+  },
+
+  {
+    id: 10,
+    title: "MM3",
+    description: "Union Budget",
+    image: MM3,
+    link: "https://www.canva.com/design/DAHBTl_dmak/7dFIAp682X0FG2mhESdyKQ/view?utm_content=DAHBTl_dmak&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h11d429337a"
+  },
+
+  {
     id: 9,
     title: "MM2",
-    description: "Money Masterclass 2025-2026",
+    description: "Shadow Banking and HFTs",
     image: MM2,
     link: "https://www.canva.com/design/DAG_JKEinjo/EuRv0rBvMNJ_j3eir25tuw/view?utm_content=DAG_JKEinjo&utm_campaign=designshare&utm_medium=link&utm_source=viewer"
   },
@@ -23,7 +41,7 @@ const mm = [
    {
     id: 8,
     title: "MM1",
-    description: "Money Masterclass 2024-2025",
+    description: "Bonds and The Global Economy",
     image: MM1,
     link: "https://www.canva.com/design/DAG4wXqrsF8/N62ipnFsosV86vJH_hHmug/view?utm_content=DAG4wXqrsF8&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=hfe7b247e50"
   }
