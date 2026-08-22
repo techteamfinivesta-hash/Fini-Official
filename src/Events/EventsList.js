@@ -16,8 +16,41 @@ import FinWeek4 from "./Images/FinWeek4.png";
 import FinWeek5 from "./Images/FinWeek5.png";
 import Orientation25 from "./Images/Orientation_25.jpg";
 import BiddingBlitz3 from "./Images/BiddingBlitz3.jpg";
+import payload from "./Images/payload.jpeg";
+import casecomp from "./Images/casecomp.jpeg";
+import finopoly2 from "./Images/finopoly2.jpeg";
 
 const events = [
+
+  {
+    name: "Finopoly 2.0",
+    photo: finopoly2,
+    link: "https://www.instagram.com/p/DVxX3krE9YY/",
+    byline:
+      "A thrilling competition inspired by the classic Monopolyt, where every decision can make or break your empire",
+    year: 2026,
+    backgroundColor: "rgb(91, 87, 101)",
+  },
+
+  {
+    name: "Case Study Competition",
+    photo: casecomp,
+    link: "https://www.instagram.com/p/DVxXqPuE1eV/",
+    byline:
+      "Step into a high stakes arena where you'll analyze real-world problems, craft innovative strategies, and compete with the brightest minds",
+    year: 2026,
+    backgroundColor: "rgb(69, 27, 160)",
+  },
+
+  {
+    name: "PayLoad",
+    photo: payload,
+    link: "https://www.instagram.com/p/DU04DODky6w/",
+    byline:
+      "While other hackathons are still hyping 'coming soon', PayLoad is already here, live and loaded",
+    year: 2026,
+    backgroundColor: "rgb(187, 149, 11)",
+  },
 
   {
     name: "Bidding Blitz 3.0",

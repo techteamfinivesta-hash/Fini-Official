@@ -86,6 +86,10 @@ const Events = () => {
           exciting upcoming events here
         </p>
       </div>
+      <h1 className="event-Year">2026</h1>
+      <div className="event-divs">{renderEventsByYear(2026)}</div>
+      <div className="event-green-line" />
+
       <h1 className="event-Year">2025</h1>
       <div className="event-divs">{renderAfterFinWeekEvents()}</div>
       <div className="banner-container" onClick={toggleFinWeekEvents}>
