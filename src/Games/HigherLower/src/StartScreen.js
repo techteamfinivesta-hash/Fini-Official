@@ -44,8 +44,7 @@ function StartScreen({ handleStart, metricToggle, setMetricToggle, isMusicOn, to
           Single Price Prediction
         </button>
       </div>
-      <br />
-      
+
       <div className="game-mode-container">
         <button className="game-mode-button" onClick={() => handleStart("Classic")}>
           Classic

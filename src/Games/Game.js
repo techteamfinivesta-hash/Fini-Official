@@ -15,7 +15,7 @@ const Game = () => {
 
 
         <div className="boxsmall game">
-          <a href="/games/HigherLower">
+          <a href="/games/higherlower">
             <div className="img">
               <img src={HL} alt="Higher or Lower Game Cover" />
             </div>

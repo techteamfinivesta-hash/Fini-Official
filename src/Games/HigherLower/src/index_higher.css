@@ -15,29 +15,87 @@
 }
 
 /* Global Animation Variables */
+/* Colors sourced from the main site's actual CSS (no shared theme file
+   exists in this repo) — cross-checked across Navbar.css, Footer.css,
+   Home.css, Loader.css, Team.css, Events.css, Components/CustomTable.css.
+   #71b139/#5f8e33 are the site's consistent two-tone brand green (used
+   for CTAs, hovers, headings across every file above); #222222 is the
+   site's recurring dark card/panel surface; #898989/#bdbdbd are the
+   site's muted-text and light-neutral tones (Footer.css). The site has
+   no semantic red/error color anywhere, so --accent-color (below) is the
+   one deliberate exception in this pass: a functional "wrong answer"
+   signal, not a branding color, picked for contrast against the card
+   surface rather than sourced from the site — see the .wrong rule. */
 :root {
   --ease-power4: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-elastic: cubic-bezier(0.5, 1.75, 0.75, 1.25);
-  --primary-color: #4c9f5f;
-  --secondary-color: #395c41;
-  --accent-color: #f44336;
-  --correct-color: #206d22;
+  --primary-color: #71b139;
+  --secondary-color: #5f8e33;
+  --surface-color: #222222;
+  --muted-color: #898989;
+  --neutral-color: #bdbdbd;
+  --accent-color: #ff5252;
+  --correct-color: #71b139;
 }
 
-/* Smooth Transition Base for Animated Elements */
-[data-animation] {
-  opacity: 0;
-  transition: transform 1s var(--ease-power4), opacity 1s var(--ease-power4);
+/* Uniform Button Sizing (every game-choice button) */
+/* Every button the player actually chooses between — game mode, dual/
+   single-comparison toggle, Higher/Lower, Try Again/Main Menu/Copy
+   Result — shares one fixed box instead of each being auto-sized to its
+   own text (which is why "Higher"/"Lower" or "Try Again"/"Main Menu"
+   used to render as visibly different widths from each other). Height
+   (not just padding) is fixed too so a two-line label like "Single Price
+   Prediction" still ends up the same size as a one-line "Quit"-length
+   label — flex-centering handles 1 or 2 lines the same way. Sizing
+   itself is re-declared per breakpoint below (mobile/short-viewport
+   tiers) using this exact same selector list, so buttons keep matching
+   each other at every screen size instead of just at desktop width.
+   border-radius: one shape rule for every button in the game (see the
+   secondary-button rule below) — rounded-rect everywhere, not a mix of
+   rounded-rect here and a full pill on .quit-button/.settings-button/
+   etc, which read as two different button systems despite both groups
+   being "make a choice" buttons. */
+.game-mode-button,
+.metric-toggle button,
+.dual-buttons button,
+.single-buttons button,
+.end-buttons button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 220px;
+  height: 58px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 16px;
+  line-height: 1.2;
+  text-align: center;
 }
 
-/* Scroll Triggered Animations */
-[data-animation="fade-up"] { transform: translateY(50px); }
-[data-animation="fade-down"] { transform: translateY(-50px); }
-[data-animation="fade-left"] { transform: translateX(50px); }
-[data-animation="fade-right"] { transform: translateX(-50px); }
-[data-animation].visible {
-  opacity: 1;
-  transform: none !important;
+/* Same idea, one size down: the secondary/utility controls (settings
+   gear, quit, and the two buttons inside the settings popover) are a
+   distinct tier from the game-choice buttons above — smaller and
+   secondary by design — but should still match EACH OTHER exactly
+   rather than each being sized to its own text and padding, the way
+   .music-toggle (a 5px/10px "chip") used to sit oddly next to
+   .close-settings (a 10px/20px pill) right above it in the same panel.
+   Same border-radius as the group above too, not the full pill (19px,
+   i.e. half the height) this used to be — one shape system across every
+   button in the game, size is the only thing that varies by tier. */
+.settings-button,
+.quit-button,
+.music-toggle,
+.close-settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 110px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.1;
+  text-align: center;
 }
 
 /* Background Electric Effect on Start Screen */
@@ -48,7 +106,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 50% 50%, #000000, rgba(143, 142, 142, 0.8));
+  background: radial-gradient(circle at 50% 50%, #000000, rgba(95, 142, 51, 0.25));
   animation: gradient-pulse 8s infinite var(--ease-power4);
   z-index: -1;
 }
@@ -67,7 +125,120 @@
   transform: translateZ(20px) rotateX(1deg) rotateY(1deg) rotateZ(-0.5deg);
 }
 
+/* Game Screen Wrapper */
+/* Explicit rule so this class is self-contained: without it, ".wrapper" has
+   no styling of its own here and silently inherits an unrelated ".wrapper"
+   rule from ContactUs/Contact.css (display:flex; flex-wrap:wrap; margin:20px)
+   that leaks in globally because CRA bundles all imported CSS site-wide and
+   class names aren't scoped. That collision is what collapses this screen
+   to ~500px and throws off the .timer/.score-board layout. position:relative
+   also gives .score-board (position:absolute) a sane containing block.
+   Scoped as ".app .wrapper" (GameScreen's wrapper is always a child of
+   App1's .app div) rather than bare ".wrapper" — a bare selector ties in
+   specificity with the Contact.css rule, so which one wins would depend on
+   import order between two unrelated files instead of being guaranteed. */
+.app {
+  /* Screen swaps (start/game/end) change the document's height above
+     whatever the user was scrolled to; the browser's scroll-anchoring
+     would otherwise shift the scroll offset to compensate, landing the
+     new screen mid-scroll. App1 also resets scroll on screen change —
+     this is belt-and-suspenders for the same class of jump. */
+  overflow-anchor: none;
+}
+
+/* Screen Crossfade (start/game/end handoff) */
+/* min-height keeps every screen's container the same baseline size
+   (matching .wrapper's own min-height below), so the page's total height
+   — and with it the Navbar/Footer position — doesn't suddenly change the
+   instant a shorter screen (e.g. EndScreen) becomes the one contributing
+   to layout. Without this, .screen-layer-exit's own height change during
+   the crossfade would jump the footer mid-fade.
+   --nav-offset (set by App1 from the actual <header class="navbar">
+   height) is subtracted because this container sits below that navbar,
+   not at the true top of the viewport — a raw 100vh here would run past
+   the visible viewport by however tall the navbar is. Falls back to 72px
+   (the navbar's typical measured height) if JS hasn't set it yet. */
+.screen-transition {
+  position: relative;
+  min-height: calc(100vh - var(--nav-offset, 72px));
+}
+.screen-layer-enter {
+  position: relative;
+  z-index: 1;
+}
+/* The outgoing screen: stays mounted and fully interactive-looking but
+   inert (pointer-events:none) while it fades out on top of the incoming
+   screen underneath, instead of vanishing instantly on unmount. Absolute
+   (not relative) so it doesn't also contribute to .screen-transition's
+   flow height — that's the incoming layer's job. */
+.screen-layer-exit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  pointer-events: none;
+  animation: crossfade-out 400ms ease-out forwards;
+}
+@keyframes crossfade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.app .wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Centers the actual game content (cards + buttons) in whatever
+     vertical space is left after the reserved top zone below, instead of
+     leaving it pinned to the top of that space. */
+  justify-content: center;
+  /* See the identical --nav-offset comment on .screen-transition above:
+     without subtracting the navbar's height, this box ran a full 100vh
+     starting below the navbar — overshooting the real viewport by the
+     navbar's height — which biased the centered content downward enough
+     that the Higher/Lower buttons rendered partly below the fold on
+     shorter viewports. The extra 16px is slack on top of that: content
+     (padding-top + cards + buttons) is occasionally a few px taller than
+     the exactly-available space even with an accurate nav-offset, so this
+     keeps a small margin in hand rather than landing flush against it. */
+  min-height: calc(100vh - var(--nav-offset, 72px) - 16px);
+  width: 100%;
+  margin: 0;
+  /* Fixed px, not vh: clears .score-board (top:20px, ~32px tall) so
+     cards/buttons don't render underneath it. Using px here (rather than
+     the 25vh this was before) keeps the reserved zone's actual pixel
+     size constant across viewport heights instead of ballooning on
+     taller screens.
+     This is the Classic/Single-mode value (score-board only, no .timer
+     — see .wrapper-with-timer below for Beat The Clock). Deliberately
+     just the score-board's own clearance plus a few px, NOT a generous
+     "comfortable" buffer on top of that: because this padding sits
+     BEFORE the flex centering above, any extra buffer here shows up
+     doubled in the above/below imbalance (justify-content:center splits
+     whatever height is left AFTER padding evenly, so padding beyond the
+     bare minimum adds to the gap above the cards without adding
+     anything to the gap below the buttons). A padding-top larger than
+     ~50px was exactly what made the empty gap above the cards visibly
+     bigger than the one below the buttons instead of the two matching. */
+  padding-top: 50px;
+}
+.app .wrapper.wrapper-with-timer {
+  padding-top: 150px;
+}
+
 /* Start Screen - Centered Layout */
+/* min-height (not the old inert height:100%) + the --nav-offset subtraction
+   is the same fix as .app .wrapper above — this container sits below the
+   navbar too, so it needs the same accounting to actually fill "one
+   viewport" instead of overshooting it. Combined with the much smaller
+   header/toggle/button sizing below (the old sizing — a 60vw logo image,
+   65px heading, 20vw/30vw-wide buttons, generous margins between every
+   group — added up to ~1000px+ tall regardless of viewport, guaranteeing
+   the page always needed to scroll to reach every control), the whole
+   menu now fits within one screen instead of requiring a scroll to reach
+   the mode buttons. */
 .start-container {
   position: relative;
   display: flex;
@@ -75,9 +246,9 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 100%;
-  margin: 35px auto;
-  padding: 60px 30px;
+  min-height: calc(100vh - var(--nav-offset, 72px));
+  margin: 0 auto;
+  padding: 24px 20px;
   text-align: center;
   background: url('../public/images/background.jpeg') no-repeat center center/cover;
   animation: fadeIn 1s ease;
@@ -90,32 +261,35 @@
 /* Header Animations */
 .header-animation {
   animation: slideDown 1s ease-out;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100vw;
+  width: 100%;
 }
 .header-animation h1 {
   word-wrap: break-word;
-  width: 100vw;
-  font-size: 65px;
+  width: 100%;
+  font-size: 56px;
   letter-spacing: 2.5px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   animation: floating 6s infinite var(--ease-power4);
 }
 .header-animation img {
-  width: 60vw;
-  font-size: 40px;
-  margin-bottom: 26px;
+  /* Was 60vw of a ~2.5:1 image — ~350px tall on a typical desktop
+     viewport on its own. Capped so it reads as a logo, not a hero
+     image, while still reading at roughly the scale of the game
+     screen's own cards/text rather than shrunk down small next to them. */
+  width: min(26vw, 240px);
+  margin-bottom: 14px;
 }
 .header-animation p {
-  width: 80vw;
+  width: min(75vw, 620px);
   word-wrap: break-word;
-  font-size: 20px;
-  margin-bottom: 20px;
-  color: rgba(209, 205, 205, 0.676);
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: var(--muted-color);
 }
 @keyframes slideDown {
   from { transform: translateY(-30px); opacity: 0; }
@@ -132,30 +306,29 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  margin-bottom: 30px;
+  gap: 16px;
+  margin-bottom: 16px;
 }
+/* Same resting look as .metric-toggle button below (transparent fill,
+   translucent outline) — this group has no persisted "selected" option
+   (clicking either one starts the game immediately), so it shouldn't
+   read as one either. It used to default to a solid, permanently-filled
+   green — which, sitting right above the mode toggle's transparent/
+   outlined resting style, looked like a second, differently-styled
+   "selected" indicator, implying the two picker groups worked
+   differently when they're actually both just button choices. */
 .game-mode-button {
-  padding: 10px 20px;
-  width: 20vw;
-  background-color: var(--primary-color);
-  border: 1px solid transparent;
-  border-radius: 10px;
-  color: rgb(10, 43, 22);
-  font-size: 24px;
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
   font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease;
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  transition: transform 0.2s ease, background 0.3s ease, border-color 0.3s ease;
 }
 .game-mode-button:hover {
-  transform: scale(1.1);
-  background-color: var(--secondary-color);
+  transform: scale(1.05);
+  background: rgba(113, 177, 57, 0.18);
+  border-color: var(--primary-color);
 }
 .game-mode-button:active {
   animation: button-elastic 0.4s var(--ease-elastic);
@@ -173,18 +346,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  margin-bottom: 40px;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 .metric-toggle button {
-  width: 30vw;
-  padding: 10px;
   background: transparent;
-  font-size: 20px;
   font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-  border: 3px solid rgb(232, 236, 231);
-  border-radius: 30px;
-  transition: background 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  transition: background 0.3s ease, border-color 0.3s ease;
   position: relative;
 }
 .metric-toggle button::after {
@@ -194,18 +363,20 @@
   left: 0;
   width: 100%;
   height: 2px;
-  background: rgb(163, 231, 189);
+  background: var(--primary-color);
   transform: scaleX(0);
   transition: transform 0.6s var(--ease-power4);
   z-index: -1;
 }
 .metric-toggle button:hover {
-  background: rgba(117, 119, 117, 0.653);
-  color: rgb(1, 1, 17);
+  background: rgba(113, 177, 57, 0.18);
+  border-color: var(--primary-color);
+  color: #ffffff;
 }
 .metric-toggle button.active {
-  background: rgba(139, 147, 139, 0.889);
-  color: rgb(1, 1, 17);
+  background: rgba(113, 177, 57, 0.28);
+  border-color: var(--primary-color);
+  color: #ffffff;
 }
 .metric-toggle button.active::after,
 .metric-toggle button:hover::after {
@@ -223,26 +394,24 @@
 .settings-button {
   position: absolute;
   left: 150px;
-  padding: 10px 20px;
   background: transparent;
-  font-size: 15px;
-  border: 2px solid lightgrey;
-  border-radius: 50px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 .settings-button:hover {
-  background: lightgrey;
-  color: black;
+  background: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: #ffffff;
 }
 .settings-panel {
   position:sticky;
   top: 80%;
   left: 75%;
   transform: translate(-50%, -50%);
-  background: rgba(48, 58, 45, 0.95);
+  background: rgba(34, 34, 34, 0.95);
   padding: 10px;
-  border: 4px solid lightgrey;
+  border: 2px solid rgba(113, 177, 57, 0.4);
   border-radius: 10px;
   z-index: 100;
   width: 40%;
@@ -265,30 +434,26 @@
   margin-right: 10px;
 }
 .music-toggle {
-  padding: 5px 10px;
-  border: 2px solid lightgrey;
-  border-radius: 5px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
   background: transparent;
-  font-size: 16px;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 .music-toggle:hover {
-  background: rgb(170, 222, 127);
-  color: black;
+  background: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: #ffffff;
 }
 .close-settings {
-  padding: 10px 20px;
-  border: 2px solid lightgrey;
-  border-radius: 50px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
   background: transparent;
-  font-size: 16px;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 .close-settings:hover {
-  background: lightgrey;
-  color: black;
+  background: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: #ffffff;
 }
 
 /* Quit Button */
@@ -296,28 +461,33 @@
   position: fixed;
   bottom: 5px;
   left: 20px;
-  padding: 10px 20px;
   background: transparent;
-  font-size: 15px;
-  border: 2px solid lightgrey;
-  border-radius: 50px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background 0.3s ease, border-color 0.3s ease;
   z-index: 100;
 }
 .quit-button:hover {
-  background: rgb(182, 220, 194);
-  color: rgba(0, 0, 0, 0.77);
+  background: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: #ffffff;
 }
 
 /* Timer (Prominent Styling) */
+/* position:absolute (not fixed) so it shares .wrapper as a containing block
+   with .score-board — both then measure "top" from the same reference
+   point. With position:fixed this measured from the viewport instead, and
+   since .wrapper sits below the site's page header, "18vh" and the
+   score-board's "10vh" landed in different coordinate spaces and visibly
+   overlapped. */
 .timer {
-  position: fixed;
-  top: 18vh;
+  position: absolute;
+  top: 70px;
   left: 50%;
   transform: translateX(-50%);
   font-size: 2.5rem;
   font-weight: bold;
+  color: var(--primary-color);
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
   z-index: 10;
 }
@@ -333,22 +503,22 @@
 .dual-card {
   width: 300px;
   height: 400px;
-  background: rgba(50, 78, 48, 0.396);
+  background: rgba(34, 34, 34, 0.75);
   padding: 30px;
   border-radius: 15px;
   text-align: center;
   backdrop-filter: blur(5px);
-  border: 3px solid rgba(156, 219, 184, 0.602);
+  border: 2px solid rgba(113, 177, 57, 0.5);
 }
 .single-card {
   width: 700px;
-  height: 500px;
-  background: rgba(50, 78, 48, 0.396);
-  padding: 30px;
+  height: 450px;
+  background: rgba(34, 34, 34, 0.75);
+  padding: 20px;
   border-radius: 15px;
   text-align: center;
   backdrop-filter: blur(5px);
-  border: 3px solid rgba(156, 219, 184, 0.602);
+  border: 2px solid rgba(113, 177, 57, 0.5);
 }
 
 /* Image Styling */
@@ -361,15 +531,18 @@
 }
 
 /* Dual Comparison Mode (Game Screen) */
+/* margin was "5%" — percentage margins (including top/bottom) always
+   resolve against the CONTAINING BLOCK'S WIDTH, per the CSS spec, never
+   its height. On a 1366-1440px-wide viewport that's ~68-72px of vertical
+   margin on top of what was already intended as breathing room, adding up
+   fast. Fixed px sidesteps that entirely. */
 .dual-container {
-  margin:5%;
+  margin: 10px 0 20px;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 35px;
- 
-
 }
 .dual-card h2 {
   font-size: 28px;
@@ -383,27 +556,28 @@
   font-size: 36px;
   font-weight: bold;
   letter-spacing: 5px;
-  color: #aaaaaa;
+  color: var(--neutral-color);
 }
+/* margin-top was "15%" — same width-relative issue as .dual-container
+   above (~205px at 1366px wide instead of the small gap intended).
+   height:100% was inert (no ancestor had an explicit, non-min, height for
+   it to resolve against) so it's dropped rather than carried forward. */
 .dual-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 20px;
   justify-content: center;
-  margin-top:15%;
-  height: 100%;
-  
+  margin-top: 0;
 }
 .dual-buttons button {
-  padding: 12px 30px;
-  font-size: 22px;
-  border: none;
-  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
-  transition: transform 0.3s ease, background 0.3s ease;
-  background: rgba(255, 255, 255, 0.1);
+  transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+  background: rgba(255, 255, 255, 0.08);
 }
 .dual-buttons button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--secondary-color);
+  border-color: var(--secondary-color);
   transform: translateY(-2px);
 }
 
@@ -411,7 +585,7 @@
 .single-container {
   display: flex;
   justify-content: center;
-  margin: 80px 0;
+  margin: 10px 0 20px;
 }
 .single-card h2 {
   font-size: 28px;
@@ -421,25 +595,25 @@
   font-size: 36px;
   font-weight: bold;
 }
+/* margin was "15% 5%" — the 15% top/bottom is width-relative like the
+   others above (~205px at 1366px wide); the 5% left/right was redundant
+   anyway since justify-content:center already centers the flex children. */
 .single-buttons {
   display: flex;
-  margin:15% 5%;
-  height:100px;
+  flex-wrap: wrap;
+  margin-top: 10px;
   gap: 40px;
   justify-content: center;
-  /* margin:30%; */
 }
 .single-buttons button {
-  padding: 12px 55px;
-  font-size: 25px;
-  border: none;
-  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
-  transition: transform 0.3s ease, background 0.3s ease;
-  background: rgba(255, 255, 255, 0.1);
+  transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+  background: rgba(255, 255, 255, 0.08);
 }
 .single-buttons button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--secondary-color);
+  border-color: var(--secondary-color);
   transform: translateY(-2px);
 }
 
@@ -449,8 +623,36 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  text-align: center;
+  /* Was also listing "text-glitch 2.0s steps(2) infinite alternate" here,
+     but no @keyframes text-glitch was ever defined anywhere in this file —
+     a silent no-op. Dropped rather than left as dead reference. */
+  animation: enhanced-pop 0.8s var(--ease-elastic);
+}
+/* Added once the cards start their swipe-out (see resultExiting in
+   GameScreen.js) so this fully opaque, position:fixed icon fades out in
+   step with them, finishing before the round/screen handoff that follows
+   — rather than sitting untouched through both the swipe and (on a loss)
+   the screen crossfade and only disappearing on unmount, which read as a
+   hard cut arriving late, well after the rest of the screen had already
+   dimmed. Overrides (doesn't combine with) the entrance animation above,
+   which has always finished long before this gets added. Duration is
+   shorter than CARD_EXIT_MS (600ms in GameScreen.js) so it's fully faded
+   before the cards finish, not still fading when they're already gone. */
+.result-overlay-exit {
+  animation: result-overlay-fade-out 0.5s ease-out forwards;
+}
+@keyframes result-overlay-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.result-icon {
   font-size: 10rem;
-  animation: enhanced-pop 0.8s var(--ease-elastic), text-glitch 2.0s steps(2) infinite alternate;
+}
+.price-delta {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
 }
 @keyframes enhanced-pop {
   0% {
@@ -469,19 +671,97 @@
   }
 }
 
-.correct { color: var(--correct-color); }
-.wrong   { color: var(--accent-color); }
+/* Target the icon/delta children directly rather than relying on
+   inheritance from .correct/.wrong on the parent .result-overlay: the
+   file's own "* { color: white; }" reset (top of file) matches those
+   children directly, and a direct match always wins over an inherited
+   value no matter the ancestor's specificity — so a bare ".wrong { color:
+   ... }" rule silently never took effect. */
+.result-overlay.correct .result-icon,
+.result-overlay.correct .price-delta {
+  color: var(--correct-color);
+}
+/* No red/error color exists anywhere in the site's CSS (checked Navbar,
+   Footer, Home, Team, Events, Sponsor, Contact, CustomTable) — the closest
+   candidate, #76062c, is a one-off decorative background for a single
+   sponsor logo tile, not a semantic color. #ff5252 is a deliberate,
+   one-off exception to the "site palette only" rule for this pass: it's
+   a functional error signal, not branding, chosen for ~5:1 contrast
+   against the .dual-card/.single-card surface (#222222 at 0.75 alpha). */
+.result-overlay.wrong .result-icon,
+.result-overlay.wrong .price-delta {
+  color: var(--accent-color);
+}
+
+/* Streak Display (Score Board) */
+.streak-count {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+/* Leaderboard (End Screen) */
+.leaderboard {
+  width: min(90vw, 420px);
+  /* Vertical spacing comes from .end-container's gap; this only needs to
+     center the box horizontally. */
+  margin: 0 auto;
+  padding: 15px 20px;
+  border: 2px solid rgba(113, 177, 57, 0.5);
+  border-radius: 15px;
+  background: rgba(34, 34, 34, 0.75);
+  backdrop-filter: blur(5px);
+  /* Fades in right after end-container1 (see the comment above
+     .end-container) instead of on the same 0-1s beat as the rest of the
+     old container-level animation, so it doesn't appear before the
+     heading/score above it has. */
+  animation: fadeIn 0.45s ease-out forwards;
+  animation-delay: 0.25s;
+}
+.leaderboard h3 {
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+  color: var(--primary-color);
+}
+.leaderboard-empty {
+  color: var(--muted-color);
+  font-size: 1rem;
+}
+.leaderboard-list {
+  list-style: decimal inside;
+  text-align: left;
+}
+.leaderboard-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.95rem;
+}
+.leaderboard-list li:last-child {
+  border-bottom: none;
+}
+.leaderboard-score {
+  font-weight: 700;
+  color: var(--primary-color);
+}
+.leaderboard-meta {
+  color: var(--muted-color);
+  font-size: 0.85rem;
+  text-align: right;
+}
 
 /* Scoreboard with Graphic Background and Slide Down Effect */
 .score-board {
   position: absolute;
-  top: 10vh;
+  top: 20px;
   width: 100vw;
   display: flex;
   justify-content: space-between;
   padding: 0 2rem;
   font-size: 1.2rem;
-  background: linear-gradient(45deg, rgba(175, 236, 191, 0.213), rgba(0,0,0,0.3));
+  background: linear-gradient(90deg, rgba(113, 177, 57, 0.15), rgba(34, 34, 34, 0.4));
   color: #fff;
   border-radius: 10px;
   animation: slideDown 1s ease-out forwards;
@@ -489,14 +769,36 @@
 }
 
 /* End Screen Container */
+/* gap (not per-child margins/<br/> tags) is the single source of vertical
+   spacing between end-container1, .leaderboard and .end-buttons — keeps
+   the layout to one definite, easy-to-tune number instead of several
+   stacking margins. */
+/* No animation of its own: .end-container1/.leaderboard/.end-buttons each
+   fade in independently below, staggered in reading order. Animating
+   opacity here too used to multiply on top of end-container1's own fade
+   while, separately, the individually-delayed h2 (0.2s)/p (1.2s)/buttons
+   (1.5s) spread the reveal over 2.5s with .leaderboard (no delay of its
+   own, riding only this rule's 0-1s fade) fully visible before the score
+   text even started — sections popping in out of reading order, which is
+   what read as a flicker. */
+/* min-height matches .app .wrapper's (GameScreen) — without it,
+   justify-content:center above has no extra space to distribute and
+   .end-container just sizes to its own content, starting right at the
+   top of .screen-transition. GameScreen's cards are vertically centered
+   in the viewport, so during the crossfade the outgoing ✖ overlay (mid-
+   screen) and the incoming "Game Over!" box (pinned to the top) landed
+   in different places — a spatial jump on top of the opacity fade, on a
+   screen the fade itself already made smooth. Centering both the same
+   way keeps the crossfade landing in the same spot. */
 .end-container {
-  margin-top:20px;
+  margin-top: 10px;
   display: flex;
   align-items: center;
   text-align: center;
   flex-direction: column;
   justify-content: center;
-  animation: fadeIn 1s ease-out forwards;
+  min-height: calc(100vh - var(--nav-offset, 72px));
+  gap: 24px;
 }
 .end-container1 {
   display: inline-flex;
@@ -506,55 +808,61 @@
   text-align: center;
   width: auto;
   height: auto;
-  padding: 20px;
-  animation: fadeIn 1s ease-out forwards;
+  padding: 24px 32px;
+  gap: 10px;
+  animation: fadeIn 0.45s ease-out forwards;
   border-radius: 30px;
-  border: 3px solid rgb(140, 162, 140);
+  border: 2px solid rgba(113, 177, 57, 0.5);
 }
 
 /* Game Over Text */
 .end-container1 h2 {
-  width: 50vw;
-  height: 12vh;
-  font-size: 70px;
-  color: #e9f3e9;
-  animation: slideDown 1s ease-out forwards;
-  animation-delay: 0.2s;
-  margin-bottom: 20px;
+  max-width: 50vw;
+  font-size: 56px;
+  color: #ffffff;
+  animation: slideDown 0.45s ease-out forwards;
 }
 
 /* Final and High Score Display */
+/* Same short delay/duration as h2 (not h2's old 1.2s delay) so the whole
+   box — heading and scores — reads as one beat instead of the score
+   lines lagging a full second behind the heading. */
 .end-container1 p {
-  height: 5vh;
-  font-size: 40px;
-  margin-bottom: 30px;
-  animation: fadeIn 1s ease-out forwards;
-  animation-delay: 1.2s;
+  font-size: 32px;
+  animation: fadeIn 0.45s ease-out forwards;
+  animation-delay: 0.1s;
 }
 
 /* Buttons: Try Again & Main Menu */
+/* Spacing above this block now comes solely from .end-container's gap
+   (an extra margin-top here used to add on top of that, over-spacing it).
+   display:flex is what makes this row's own "gap" actually do anything
+   — without it (as it was) buttons are inline-block by default, so gap
+   is a no-op and spacing was really coming from a margin on the buttons
+   themselves, which the shared button-sizing rule above doesn't set.
+   flex-wrap so buttons that no longer fit in one row (very narrow
+   viewports) wrap instead of overflowing, same as .dual-buttons/
+   .single-buttons. */
 .end-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
-  animation: fadeIn 1s ease-out forwards;
-  animation-delay: 1.5s;
-  transform: translate(15px, -35px);
+  animation: fadeIn 0.45s ease-out forwards;
+  animation-delay: 0.45s;
 }
 
 .end-buttons button {
-  width: 20vw;
-  margin:10px;
   background-color: transparent;
-  font-size: 40px;
   font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-  border: 2px solid rgb(120, 118, 118);
-  border-radius: 30px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
   transition: 0.3s ease;
-  padding: 15px 15px;
 }
 
 .end-buttons button:hover {
-  background-color: rgb(88, 135, 87);
-  color: black;
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: #ffffff;
 }
 
 /* Keyframe Definitions for Animations */
@@ -573,56 +881,11 @@
   100% { transform: translateY(0); opacity: 1; }
 }
 
-/* Loading Container & Spinner */
-.loading-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: black;
-  z-index: 1000;
-}
-.loading-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-.loading-spinner {
-  width: 80px;
-  height: 80px;
-  position: relative;
-}
-.spinner-ring {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 4px solid transparent;
-  border-top-color: white;
-  border-left-color: white;
-  animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-}
-.loading-text {
-  color: white;
-  font-size: 1.2rem;
-  font-weight: 500;
-  letter-spacing: 2px;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-@keyframes pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
-
 /* Swipe Animations for Commodity Cards */
+/* Duration (0.6s) is read back via the real animationend event in
+   GameScreen.js's animateCards(), not duplicated as a timeout — but it's
+   also documented as TIMING.CARD_EXIT_MS there for the pacing scheme.
+   Keep these two in sync if this ever changes. */
 @keyframes swipe-right-card {
   0% {
     transform: translateX(0);
@@ -651,6 +914,188 @@
 }
 
 /* Responsive Styles for Mobile and Tablets */
+/* Short-viewport heights (a laptop with browser chrome eating into the
+   window, a smaller/split browser window, etc.): the padding-top
+   reserved for .timer/.score-board plus the cards and buttons below it
+   can add up to more than the viewport actually has, in which case the
+   wrapper just grows to fit content and the centering above has nothing
+   left to distribute — the buttons end up rendered hard against (or just
+   past) the bottom edge. Shrinking the reserved zone on short viewports
+   frees up enough room for that content to fit with room to spare again.
+   Only .wrapper-with-timer needs shrinking per tier below — the plain
+   .app .wrapper value (score-board only) is already just its bare
+   clearance need (see the base rule above), which doesn't change across
+   breakpoints since .score-board itself doesn't get any smaller at
+   these sizes, so the same 50px value keeps applying automatically.
+   .timer itself DOES need shrinking here too, on every tier — its
+   font-size only had width-based breakpoints (768px/480px) before this,
+   so a wide-but-short viewport (e.g. 1000x600 — no width tier, but
+   narrow enough to hit max-height:650 below) kept the full-size ~60px-
+   tall timer while the padding-top reserved for it shrank out from
+   under it, overlapping the cards. top is pulled in to match each
+   tier's smaller padding-top too, the same way the max-width:480px-and-
+   max-height:700px tier further down already does for that breakpoint. */
+@media screen and (max-height: 800px) {
+  .app .wrapper.wrapper-with-timer {
+    padding-top: 110px;
+  }
+  .wrapper-with-timer .timer {
+    top: 60px;
+    font-size: 1.5rem;
+  }
+  /* Single Price Prediction's card (450px, vs dual's 300x400 pair split
+     across two narrower cards) plus its larger buttons need this to
+     kick in earlier than dual mode does. */
+  .single-card {
+    height: 340px;
+  }
+}
+@media screen and (max-height: 650px) {
+  .app .wrapper.wrapper-with-timer {
+    padding-top: 90px;
+  }
+  .wrapper-with-timer .timer {
+    top: 50px;
+    font-size: 1.2rem;
+  }
+}
+/* Very short viewports at desktop-ish widths (e.g. a tiled/short browser
+   window): below 768px width the mobile rules further down already
+   shrink the cards, but above that width .dual-card/.single-card are
+   still their fixed desktop height (400px/450px) regardless of how
+   little vertical room is actually available. Shrinking them here too
+   (independent of width) is what closes the remaining gap. */
+@media screen and (max-height: 620px) {
+  .app .wrapper.wrapper-with-timer {
+    padding-top: 60px;
+  }
+  .wrapper-with-timer .timer {
+    top: 34px;
+    font-size: 1rem;
+  }
+  .dual-card {
+    height: 260px;
+  }
+  .single-card {
+    height: 300px;
+  }
+}
+
+/* End Screen on short viewports — same idea as the tiers above: now that
+   .end-container is vertically centered like .app .wrapper (to keep the
+   crossfade from the game screen landing in the same spot instead of
+   jumping to the top), it needs the same shrink-on-short-viewports
+   treatment or its fixed-size heading/score/leaderboard/buttons run past
+   the fold the same way GameScreen's cards did before that fix. */
+@media screen and (max-height: 800px) {
+  .end-container1 {
+    padding: 16px 24px;
+    gap: 6px;
+  }
+  .end-container1 h2 {
+    font-size: 42px;
+  }
+  .end-container1 p {
+    font-size: 24px;
+  }
+  .leaderboard {
+    padding: 10px 16px;
+  }
+  .leaderboard h3 {
+    font-size: 1.2rem;
+    margin-bottom: 6px;
+  }
+  /* One shared size per breakpoint across every game-choice button, not
+     just within a single screen — .game-mode-button/.metric-toggle
+     button repeat this same 190/52/15 elsewhere for the start screen. */
+  .game-mode-button,
+  .metric-toggle button,
+  .dual-buttons button,
+  .single-buttons button,
+  .end-buttons button {
+    width: 190px;
+    height: 52px;
+    font-size: 15px;
+  }
+}
+@media screen and (max-height: 650px) {
+  .end-container {
+    gap: 14px;
+  }
+  .end-container1 {
+    padding: 12px 20px;
+  }
+  .end-container1 h2 {
+    font-size: 32px;
+  }
+  .end-container1 p {
+    font-size: 19px;
+  }
+  .leaderboard {
+    padding: 8px 14px;
+  }
+  .leaderboard-list li {
+    padding: 3px 0;
+  }
+  .game-mode-button,
+  .metric-toggle button,
+  .dual-buttons button,
+  .single-buttons button,
+  .end-buttons button {
+    width: 165px;
+    height: 46px;
+    font-size: 13px;
+  }
+}
+
+/* Start Screen (main menu) on short viewports — same idea as the game
+   screen tiers above: the title/logo/description/toggle/mode-button
+   stack has enough margins and font sizes baked in that it can still run
+   past a short viewport even after the base sizing above. Shrinking
+   further here (and dropping the description entirely below 620px, the
+   least essential line on the screen) keeps every control reachable
+   without scrolling. */
+@media screen and (max-height: 800px) {
+  .header-animation {
+    margin-bottom: 14px;
+  }
+  .header-animation h1 {
+    font-size: 40px;
+    margin-bottom: 8px;
+  }
+  .header-animation img {
+    width: min(19vw, 160px);
+    margin-bottom: 8px;
+  }
+  .header-animation p {
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+  .metric-toggle {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .game-mode-container {
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  /* .game-mode-button/.metric-toggle button sizing itself is set by the
+     shared max-height:800px button rule above (with .dual-buttons/
+     .single-buttons/.end-buttons button) rather than repeated here. */
+}
+@media screen and (max-height: 680px) {
+  .header-animation p {
+    display: none;
+  }
+  .header-animation img {
+    width: min(14vw, 100px);
+    margin-bottom: 4px;
+  }
+  .header-animation h1 {
+    font-size: 28px;
+  }
+}
+
 /* For tablets and small laptops (max-width: 768px) */
 @media screen and (max-width:1307px){
   .single-buttons{
@@ -664,16 +1109,40 @@
 
 }
 @media screen and (max-width: 768px) {
+  /* Narrow viewports need .wrapper-with-timer shrunk independent of the
+     max-height tiers above: below 480px the dual cards stack instead of
+     sitting side by side, which alone roughly doubles their combined
+     height, so a narrow-but-reasonably-tall phone (e.g. 375x812,
+     matching no max-height tier) still needs this reduced or the
+     stacked cards run past the fold on their own. The plain .app
+     .wrapper value doesn't need its own override here — see the base
+     rule's comment. */
+  .app .wrapper.wrapper-with-timer {
+    padding-top: 110px;
+  }
   .header-animation h1 {
     width: 90vw;
+    font-size: 48px;
   }
   .header-animation img {
     width: 70vw;
   }
+  /* One shared size across every game-choice button at this breakpoint —
+     190x52 fits 3 in a row (.end-buttons: 3*190 + 2*10 gap = 590px, well
+     under 768px) so none of these need to stack yet. */
+  .game-mode-button,
+  .metric-toggle button,
+  .dual-buttons button,
+  .single-buttons button,
+  .end-buttons button {
+    width: 190px;
+    height: 52px;
+    font-size: 15px;
+  }
   .dual-container {
     flex-direction: row;
     gap: 20px;
-    margin: 40px 0;
+    margin: 20px 0;
   }
   .dual-card,
   .single-card {
@@ -691,7 +1160,6 @@
   }
   .timer {
     font-size: 1.5rem;
-    top: 13vh;
   }
   .settings-panel {
     width: 90%;
@@ -700,57 +1168,114 @@
     right: 5%;
     transform: none;
   }
-  .end-container h2 {
-    font-size: 60px;
-    text-overflow: clip;
+  .end-container1 h2 {
+    font-size: 44px;
   }
-  .end-container p {
+  .end-container1 p {
     font-size: 1.5rem;
-  }
-  .end-buttons {
-    flex-direction: column;
-    width: 90%;
-  }
-  .end-buttons button {
-    width: 100%;
-    font-size: 1.2rem;
   }
 }
 
 /* For phones (max-width: 480px) */
 @media screen and (max-width: 480px) {
+  /* Below this width the dual cards stack (see .dual-container further
+     down) instead of sitting side by side — two stacked cards run close
+     to 550px tall on their own before .timer's padding-top or the
+     buttons are even added, which at a narrow-but-tall viewport (e.g.
+     375x812, tall enough that none of the max-height tiers kick in to
+     shrink anything) leaves next to no slack below the buttons. Same
+     fix as the narrower/shorter tier below: reserve the zone
+     .quit-button (position:fixed, bottom:5px, ~39px tall) actually
+     occupies explicitly, rather than depending on however much slack is
+     left over once the stacked cards take their share. */
+  .app .wrapper {
+    padding-bottom: 40px;
+  }
+  .app .wrapper.wrapper-with-timer {
+    padding-top: 90px;
+  }
   .header-animation h1 {
     width: 90vw;
+    font-size: 36px;
   }
   .header-animation img {
     width: 90vw;
   }
-  
-  .dual-card,
+  /* One shared size across every game-choice button at this breakpoint. */
+  .game-mode-button,
+  .metric-toggle button,
+  .dual-buttons button,
+  .single-buttons button,
+  .end-buttons button {
+    width: 150px;
+    height: 46px;
+    font-size: 13px;
+  }
+
+  /* Two cards shrunk side-by-side stop being readable below this width —
+     stack them instead so each card gets the full card width. */
+  .dual-container {
+    flex-direction: column;
+    gap: 16px;
+    margin: 16px 0;
+  }
+  /* padding:15px (down from the base rule's 30px) so the card's actual
+     rendered height tracks its min-height below instead of running well
+     past it — the 30px base padding plus image/text was pushing real
+     height ~25-30px past min-height, which is what was eating the
+     margin the Quit-button clearance fix above depends on. */
+  .dual-card {
+    width: 85%;
+    min-height: 260px;
+    padding: 15px;
+  }
   .single-card {
-    width: 50%;
+    width: 90%;
     min-height: 300px;
+    padding: 15px;
   }
   .commodity-image {
     height: 140px;
   }
-  .dual-buttons button,
-  .single-buttons button {
-    padding: 25px;
-    font-size: 1.2rem;
+  /* Beat The Clock's taller .wrapper-with-timer padding-top (needed to
+     clear .timer) leaves noticeably less room below the stacked cards
+     than every other mode at this width — enough less that .quit-button
+     (position:fixed, bottom:5px, independent of any of this) started
+     overlapping the Higher/Lower row. Trimming the images specifically
+     in this mode (using the same wrapper-with-timer class App1/
+     GameScreen already thread through for the padding-top split) closes
+     that gap without shrinking cards in every other mode too. */
+  .wrapper-with-timer .commodity-image {
+    height: 105px;
   }
   .timer {
     font-size: 1.2rem;
   }
-  .settings-button,
-  .quit-button {
-    padding: 8px 12px;
-    font-size: 0.8rem;
+  /* .score-board had no responsive sizing at all — its three labels
+     ("High Score: 0" / "Streak: 0" / "Score: 0") plus 2rem of padding on
+     each side don't fit on one line under ~480px, so it silently wrapped
+     to two lines and got much taller than the "top:20px, ~32px tall"
+     .app .wrapper's padding-top is sized around, which was pushing the
+     cards up underneath it (overlapping) at narrow widths rather than
+     just leaving less gap above them. */
+  .score-board {
+    padding: 0 0.75rem;
+    font-size: 0.85rem;
   }
-  .result-overlay {
+  /* Same shared secondary-button size as the settings-panel/quit tier
+     elsewhere. */
+  .settings-button,
+  .quit-button,
+  .music-toggle,
+  .close-settings {
+    width: 92px;
+    height: 34px;
+    font-size: 12px;
+  }
+  .result-icon {
     font-size: 4rem;
   }
-  
+
   /* Adjust settings button position for mobile */
   .settings-button {
     position: fixed;
@@ -758,22 +1283,142 @@
     top: 10px;
     z-index: 200;
   }
-  
+
+}
+
+/* Narrow AND short (e.g. an iPhone SE-class 375x667, or any phone with
+   enough browser chrome eating into the viewport to land here): the
+   max-width:480px rules above stack the two dual-comparison cards, which
+   is the right call when there's vertical room to spare, but at ~260px
+   tall each that's 536px of cards alone — on a viewport this short it
+   pushes the buttons far below the fold the same way the fix above this
+   block addresses for wider/taller screens. Shrinking the stacked cards
+   specifically (rather than only the reserved top padding) is what
+   actually recovers enough height here. */
+@media screen and (max-width: 480px) and (max-height: 700px) {
+  .app .wrapper {
+    padding-top: 36px;
+    /* .quit-button is position:fixed at bottom:5px (height 34px, so it
+       occupies the viewport's bottom ~39px) independent of this wrapper
+       entirely — tightening the gap above the cards elsewhere in this
+       pass also (correctly) shrunk the leftover slack below the buttons
+       at this tightest tier down to less than that, so the button row
+       started rendering underneath/overlapping Quit. padding-bottom
+       reserves that zone explicitly (flex centering never places content
+       inside padding) instead of depending on however much slack happens
+       to be left over. */
+    padding-bottom: 45px;
+  }
+  /* .timer's top:70px (set once, never overridden) assumed the base
+     150px-tier padding — at this tier's much smaller reserved zone, cards
+     were centering into the space right where the timer still rendered
+     70-99px down, overlapping it. Pulling the timer up to sit just under
+     the (now single-line, see .score-board above) score-board and
+     shrinking the padding to match keeps it clear without reintroducing
+     a large reserved zone. */
+  .app .wrapper.wrapper-with-timer {
+    padding-top: 85px;
+  }
+  .timer {
+    top: 46px;
+  }
+  .dual-container {
+    gap: 8px;
+    margin: 8px 0;
+  }
+  .dual-card {
+    min-height: 165px;
+    padding: 10px;
+  }
+  .single-card {
+    min-height: 220px;
+    padding: 12px;
+  }
+  /* Was 90px — .dual-card's own min-height:165px above was never actually
+     reached (image + text content needed ~188px regardless of the
+     min-height floor), which left less slack than the layout math
+     assumed and pushed the buttons below the fold once .timer's
+     clearance was fixed to not overlap the cards (see .timer/
+     .wrapper-with-timer above). Shrinking the image is what actually
+     closes that gap, since text/price sizes below are already fairly
+     tight. */
+  .commodity-image {
+    height: 65px;
+  }
+  /* Same Beat-The-Clock-specific trim as the max-width:480px tier above
+     — this tier's own with-timer padding-top (85px) still leaves less
+     room below the cards than .quit-button's fixed bottom-left footprint
+     needs. The image alone wasn't enough room to give back at this
+     tightest tier, so the card's min-height comes down too. */
+  .wrapper-with-timer .commodity-image {
+    height: 45px;
+  }
+  .wrapper-with-timer .dual-card {
+    min-height: 135px;
+  }
+  .dual-card h2,
+  .single-card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+  }
+  .dual-card .price,
+  .single-card .price,
+  .hidden-price {
+    font-size: 1.3rem;
+  }
+  /* Same shared size as the other 480px-width button tier above — all
+     five game-choice buttons repeated here (not just dual/single) since
+     this combined narrow+short query is more specific and wins over that
+     tier for any property it repeats; leaving the other three out here
+     would size them from the plain max-width:480px tier instead
+     (150/46/13), mismatching them from the ones this block does cover. */
+  .game-mode-button,
+  .metric-toggle button,
+  .dual-buttons button,
+  .single-buttons button,
+  .end-buttons button {
+    width: 130px;
+    height: 42px;
+    font-size: 12px;
+  }
 }
 
 /* For very small phones (max-width: 320px) */
 @media screen and (max-width: 320px) {
   .header-animation h1 {
     width: 80vw;
+    font-size: 30px;
   }
   .header-animation img {
     width: 100vw;
   }
-  .game-mode-button {
-    font-size: 1rem;
+  /* One shared size across every game-choice button at this breakpoint —
+     the smallest tier, and set unconditionally on width alone (unlike
+     the 480+700h tier above) so it also covers a narrow-but-tall 320px
+     phone, not just a narrow-and-short one. */
+  .game-mode-button,
+  .metric-toggle button,
+  .dual-buttons button,
+  .single-buttons button,
+  .end-buttons button {
+    width: 120px;
+    height: 40px;
+    font-size: 11px;
+  }
+  .dual-card {
+    width: 92%;
+  }
+  .single-card {
+    width: 95%;
   }
   .dual-card h2,
   .single-card h2 {
+    font-size: 1.2rem;
+  }
+  .end-container1 h2 {
+    font-size: 32px;
+  }
+  .end-container1 p {
     font-size: 1.2rem;
   }
 }

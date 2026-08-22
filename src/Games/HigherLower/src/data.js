@@ -9,6 +9,21 @@ import platinum from '../assets/images/platinum.jpeg';
 import corn from '../assets/images/corn.jpeg';
 import palladium from '../assets/images/palladium.jpg';
 import soybeans from '../assets/images/soyabean.webp';
+import aluminum from '../assets/images/aluminium.jpg';
+import nickel from '../assets/images/nickel.jpg';
+import zinc from '../assets/images/zinc.jpg';
+import tin from '../assets/images/tin.jpg';
+import lithium from '../assets/images/lithium.jpg';
+import brent_crude from '../assets/images/oil.jpg';
+import heating_oil from '../assets/images/heating oil.jpg';
+import gasoline from '../assets/images/gasoline.jpg';
+import coffee from '../assets/images/coffee.jpg';
+import cotton from '../assets/images/cotton.jpg';
+import sugar from '../assets/images/sugar.jpg';
+import cocoa from '../assets/images/cocoa.jpg';
+import rice from '../assets/images/rice.jpg';
+import cattle from '../assets/images/live catttle.jpg';
+import lumber from '../assets/images/lumber.jpg';
 
 const data = [
   {
@@ -70,6 +85,96 @@ const data = [
     symbol: "SOYBEANS",
     price: 620.15,
     image: soybeans
+  },
+  {
+    name: "Aluminum",
+    symbol: "ALUMINUM",
+    price: 2185.00,
+    image: aluminum
+  },
+  {
+    name: "Nickel",
+    symbol: "NICKEL",
+    price: 16750.00,
+    image: nickel
+  },
+  {
+    name: "Zinc",
+    symbol: "ZINC",
+    price: 2430.00,
+    image: zinc
+  },
+  {
+    name: "Tin",
+    symbol: "TIN",
+    price: 28900.00,
+    image: tin
+  },
+  {
+    name: "Lithium",
+    symbol: "LITHIUM",
+    price: 13200.00,
+    image: lithium
+  },
+  {
+    name: "Brent Crude",
+    symbol: "BRENT",
+    price: 82.40,
+    image: brent_crude
+  },
+  {
+    name: "Heating Oil",
+    symbol: "HEAT_OIL",
+    price: 2.68,
+    image: heating_oil
+  },
+  {
+    name: "Gasoline",
+    symbol: "GASOLINE",
+    price: 2.31,
+    image: gasoline
+  },
+  {
+    name: "Coffee",
+    symbol: "COFFEE",
+    price: 178.50,
+    image: coffee
+  },
+  {
+    name: "Cotton",
+    symbol: "COTTON",
+    price: 82.15,
+    image: cotton
+  },
+  {
+    name: "Sugar",
+    symbol: "SUGAR",
+    price: 21.35,
+    image: sugar
+  },
+  {
+    name: "Cocoa",
+    symbol: "COCOA",
+    price: 3920.00,
+    image: cocoa
+  },
+  {
+    name: "Rice",
+    symbol: "RICE",
+    price: 17.05,
+    image: rice
+  },
+  {
+    name: "Live Cattle",
+    symbol: "CATTLE",
+    price: 178.90,
+    image: cattle
+  },
+  {
+    name: "Lumber",
+    symbol: "LUMBER",
+    price: 512.00,
+    image: lumber
   }
 ];
 

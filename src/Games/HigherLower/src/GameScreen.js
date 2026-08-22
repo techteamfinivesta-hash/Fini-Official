@@ -27,13 +27,40 @@ const getPlaceholderImage = (side) => {
   return "/images/placeholder.png";
 };
 
-// Helper to get unique commodity
-const getUniqueCommodity = (cData, excludeCommodity = null) => {
-  let newCommodity;
-  do {
-    newCommodity = fetchCommodity(cData);
-  } while (excludeCommodity && newCommodity.name === excludeCommodity.name);
-  return newCommodity;
+// Scoring curve: streak 1-4 = +1/correct, 5-9 = +2/correct, 10+ = +3/correct.
+const getScoreIncrement = (streak) => {
+  if (streak >= 10) return 3;
+  if (streak >= 5) return 2;
+  return 1;
+};
+
+// Shared pacing constants so both branches (correct/wrong) follow the same
+// phase order — result overlay instantly, hold, then card exit — instead of
+// each being independently tuned. CARD_EXIT_MS/CARD_ENTRY_MS mirror the
+// actual CSS animation-duration / AOS data-aos-duration values below; keep
+// them in sync if those ever change.
+const TIMING = {
+  CARD_EXIT_MS: 600,     // swipe-right-card / swipe-left-card (index_higher.css)
+  CARD_ENTRY_MS: 800,    // data-aos-duration on every commodity card below
+  ENTRY_STAGGER_MS: 300, // dual-mode right card's data-aos-delay
+  REVEAL_HOLD_MS: 1200,  // correct-guess overlay hold, before cards swipe out
+  WRONG_HOLD_MS: 1600,   // wrong-guess hold — REVEAL_HOLD_MS + 400, deliberately
+                          // a bit longer for the "game over" beat
+};
+
+// Above this magnitude the raw % stops being a meaningful "how close was it"
+// signal (cross-category pairs can be off by orders of magnitude) and just
+// becomes a wall of digits, so it's capped to a plain-language label instead.
+const PRICE_DELTA_CAP_PCT = 200;
+
+// "+12.3%" / "-4.0%" style label for how far apart two prices were, capped
+// to "Much higher" / "Much lower" once the raw % stops being meaningful.
+const formatPriceDelta = (fromPrice, toPrice) => {
+  const deltaPct = ((toPrice - fromPrice) / fromPrice) * 100;
+  if (Math.abs(deltaPct) > PRICE_DELTA_CAP_PCT) {
+    return deltaPct > 0 ? "Much higher" : "Much lower";
+  }
+  return `${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(1)}%`;
 };
 
 function GameScreen({
@@ -60,6 +87,21 @@ function GameScreen({
   // Common state: track if answer submitted and the result.
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
   const [result, setResult] = useState(null);
+  // .result-overlay is position:fixed, sitting outside the cards'/screen's
+  // normal box. Cards visibly fade out over the swipe (CARD_EXIT_MS), and
+  // on a loss the whole GameScreen then crossfades out under App1's
+  // transition — but a position:fixed descendant's own opacity doesn't
+  // reliably inherit an ancestor's opacity animation the same way across
+  // browsers/compositing paths, so the overlay could sit fully opaque
+  // through both of those fades and only vanish on unmount — a hard cut
+  // arriving right as the next screen/round appears, well after
+  // everything else has already dimmed. Fading it out directly, in sync
+  // with the swipe (see resultExiting below), makes it finish fading
+  // BEFORE either of those handoffs rather than depending on inheriting
+  // an ancestor's animation.
+  const [resultExiting, setResultExiting] = useState(false);
+  const [priceDelta, setPriceDelta] = useState(null);
+  const [streak, setStreak] = useState(0);
   const wrapperRef = useRef(null);
   const musicRef = useRef(null);
 
@@ -70,8 +112,8 @@ function GameScreen({
   // Initialize AOS on component mount (entry animations only)
   useEffect(() => {
     AOS.init({
-      once: true,      // Animate only once when the element enters the viewport
-      duration: 1000   // Default duration for entry animations
+      once: true,               // Animate only once when the element enters the viewport
+      duration: TIMING.CARD_ENTRY_MS // default; every card also sets data-aos-duration explicitly
     });
   }, []);
 
@@ -80,7 +122,7 @@ function GameScreen({
     if (metricToggle) {
       // Dual Comparison mode – ensure different commodities
       const left = fetchCommodity(cData);
-      const right = getUniqueCommodity(cData, left);
+      const right = fetchCommodity(cData, left);
       setLeftCommodity(left);
       setRightCommodity(right);
       setAnswerSubmitted(false);
@@ -129,6 +171,14 @@ function GameScreen({
       }, 1000);
       return () => clearInterval(interval);
     } else if (gameMode === "Beat The Clock" && timerValue === 0) {
+      // App1 now keeps this GameScreen instance mounted (fading out) for
+      // a beat after handleLoss so the game->end transition can crossfade
+      // instead of cutting instantly — so its keydown listener below is
+      // still live during that window. Locking answerSubmitted here (the
+      // same guard handleDualAnswer/handleSingleAnswer already check)
+      // stops a stray arrow-key press from starting another round on a
+      // screen that's on its way out.
+      setAnswerSubmitted(true);
       handleLoss();
     }
   }, [timerValue, gameMode, handleLoss]);
@@ -145,7 +195,12 @@ function GameScreen({
     cards.forEach((card) => {
       card.classList.add(animationClass);
       const handleEnd = () => {
-        card.classList.remove(animationClass);
+        // Deliberately NOT removing animationClass here. The old node is
+        // about to be unmounted anyway (callback swaps in fresh commodities,
+        // and the cards below now key off a role-scoped id so that's a real
+        // unmount, not a reuse) — stripping the class first snapped the old
+        // content back to fully visible for a beat before that swap landed,
+        // which read as a duplicate/flash of the previous card.
         card.removeEventListener("animationend", handleEnd);
         animatedCount++;
         if (animatedCount === cards.length) {
@@ -167,40 +222,60 @@ const handleDualAnswer = (choice) => {
   const rightPrice = rightCommodity.price;
   const isCorrect =
     choice === "higher" ? rightPrice > leftPrice : rightPrice < leftPrice;
+  const deltaLabel = formatPriceDelta(leftPrice, rightPrice);
+
+  // Same phase order for both branches: show the result overlay instantly,
+  // hold it so it's actually readable, then swipe the cards out.
+  setPriceDelta(deltaLabel);
 
   if (!isCorrect) {
-    // For a wrong answer: Reveal the right commodity price immediately.
     setResult("wrong");
+    setStreak(0);
     sounds.wrong.play();
-    // Delay animation so the result is visible on the right.
     setTimeout(() => {
+      // Starts the overlay's own fade-out in step with the cards, so it's
+      // fully invisible by the time they finish swiping instead of
+      // sitting fully opaque and then hard-cutting away later. See the
+      // comment on resultExiting's declaration above.
+      setResultExiting(true);
       animateCards("swipe-left-card", () => {
         // After animation complete, trigger loss.
         handleLoss();
       });
-    }, 500);
+    }, TIMING.WRONG_HOLD_MS);
   } else {
-    // For a correct answer: Animate immediately.
-    animateCards("swipe-right-card", () => {
-      setResult("correct");
-      sounds.correct.play();
-
-      setTimeout(() => {
-        setScore((prev) => {
-          const newScore = prev + 1;
-          if (newScore > highScore) setHighScore(newScore);
-          return newScore;
-        });
+    setResult("correct");
+    sounds.correct.play();
+    setTimeout(() => {
+      setResultExiting(true);
+      animateCards("swipe-right-card", () => {
+        // Plain sequential values + top-level setter calls, not nested
+        // functional updaters. setScore/setHighScore are App1's setters
+        // (passed as props) — calling them from inside GameScreen's own
+        // setStreak(prev => ...) updater was a cross-component setState-
+        // during-render anti-pattern (confirmed via React's dev warning
+        // and its real JS stack). It's safe to read streak/score directly
+        // here rather than via updater functions: answerSubmitted has kept
+        // this round locked the whole time, so nothing else could have
+        // changed them out from under this closure since the click.
+        const newStreak = streak + 1;
+        const increment = getScoreIncrement(newStreak);
+        const newScore = score + increment;
+        setStreak(newStreak);
+        setScore(newScore);
+        if (newScore > highScore) setHighScore(newScore);
         if (gameMode === "Beat The Clock") {
           setTimerValue(15);
         }
         // In dual mode, the right card becomes the new left.
         setLeftCommodity(rightCommodity);
-        setRightCommodity(getUniqueCommodity(cData, rightCommodity));
+        setRightCommodity(fetchCommodity(cData, rightCommodity));
         setAnswerSubmitted(false);
         setResult(null);
-      }, 500);
-    });
+        setResultExiting(false);
+        setPriceDelta(null);
+      });
+    }, TIMING.REVEAL_HOLD_MS);
   }
 };
 
@@ -211,50 +286,63 @@ const handleSingleAnswer = (choice) => {
   sounds.flip.play();
 
   const currentPrice = currentCommodity.price;
-  const nextCommodity = fetchCommodity(cData);
+  const nextCommodity = fetchCommodity(cData, currentCommodity);
   const nextPrice = nextCommodity.price;
   const isCorrect =
     choice === "higher" ? nextPrice > currentPrice : nextPrice < currentPrice;
+  const deltaLabel = formatPriceDelta(currentPrice, nextPrice);
+
+  // Same phase order for both branches: show the result overlay instantly,
+  // hold it so it's actually readable, then swipe the cards out.
+  setPriceDelta(deltaLabel);
 
   if (!isCorrect) {
-    // For a wrong answer: Reveal the result immediately.
     setResult("wrong");
+    setStreak(0);
     sounds.wrong.play();
     setTimeout(() => {
+      setResultExiting(true);
       animateCards("swipe-left-card", () => {
         handleLoss();
       });
-    }, 500);
+    }, TIMING.WRONG_HOLD_MS);
   } else {
-    animateCards("swipe-right-card", () => {
-      setResult("correct");
-      sounds.correct.play();
-      setTimeout(() => {
-        setScore((prev) => {
-          const newScore = prev + 1;
-          if (newScore > highScore) setHighScore(newScore);
-          return newScore;
-        });
+    setResult("correct");
+    sounds.correct.play();
+    setTimeout(() => {
+      setResultExiting(true);
+      animateCards("swipe-right-card", () => {
+        // See the identical comment in handleDualAnswer: plain sequential
+        // values + top-level setter calls instead of nesting App1's
+        // setScore/setHighScore inside GameScreen's own setStreak updater.
+        const newStreak = streak + 1;
+        const increment = getScoreIncrement(newStreak);
+        const newScore = score + increment;
+        setStreak(newStreak);
+        setScore(newScore);
+        if (newScore > highScore) setHighScore(newScore);
         setCurrentCommodity(nextCommodity);
         setAnswerSubmitted(false);
         setResult(null);
+        setResultExiting(false);
+        setPriceDelta(null);
         if (gameMode === "Beat The Clock") {
           setTimerValue(15);
         }
-      }, 500);
-    });
+      });
+    }, TIMING.REVEAL_HOLD_MS);
   }
 };
 
-  // --- Swipe Detection (for pointer/mouse input) ---
-  const handlePointerDown = (e) => {
-    startXRef.current = e.clientX;
-    startYRef.current = e.clientY;
+  // --- Swipe Detection (shared by mouse and touch input) ---
+  const handlePointerDown = (clientX, clientY) => {
+    startXRef.current = clientX;
+    startYRef.current = clientY;
   };
 
-  const handlePointerUp = (e) => {
+  const handlePointerUp = (clientX) => {
     if (startXRef.current === null) return;
-    const diffX = e.clientX - startXRef.current;
+    const diffX = clientX - startXRef.current;
     // Set threshold for swipe detection (50px)
     if (Math.abs(diffX) > 50 && !answerSubmitted) {
       // Determine answer from swipe direction:
@@ -271,11 +359,45 @@ const handleSingleAnswer = (choice) => {
     startYRef.current = null;
   };
 
+  const handleMouseDown = (e) => handlePointerDown(e.clientX, e.clientY);
+  const handleMouseUp = (e) => handlePointerUp(e.clientX);
+
+  const handleTouchStart = (e) => {
+    const touch = e.touches[0];
+    handlePointerDown(touch.clientX, touch.clientY);
+  };
+  const handleTouchEnd = (e) => {
+    const touch = e.changedTouches[0];
+    handlePointerUp(touch.clientX);
+  };
+
+  // --- Keyboard Controls (third input path alongside click/swipe/touch) ---
+  // No dependency array: re-subscribes every render so the listener always
+  // closes over the current commodities/answerSubmitted state, avoiding a
+  // stale-closure bug where arrow keys would keep comparing the first round's data.
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowLeft") {
+        if (metricToggle) handleDualAnswer("lower");
+        else handleSingleAnswer("lower");
+      } else if (e.key === "ArrowRight") {
+        if (metricToggle) handleDualAnswer("higher");
+        else handleSingleAnswer("higher");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
+
   // --- Quit Handler ---
   const handleQuit = () => {
     // Replace this with your desired quit logic.
     // For demonstration, we redirect to the home page.
     sounds.quit.play();
+    // See the identical comment on the Beat The Clock branch above: this
+    // instance stays mounted (fading out) briefly after handleLoss, so
+    // lock out its still-live keydown listener the same way.
+    setAnswerSubmitted(true);
     handleLoss();
   };
 
@@ -284,21 +406,31 @@ const handleSingleAnswer = (choice) => {
     // Dual Comparison UI.
     return (
       <div
-        className="wrapper"
+        className={`wrapper ${
+          gameMode === "Beat The Clock" ? "wrapper-with-timer" : ""
+        }`}
         ref={wrapperRef}
-        onMouseDown={handlePointerDown}
-        onMouseUp={handlePointerUp}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {gameMode === "Beat The Clock" && timerValue !== null && (
-          <div className="timer">⏳ {timerValue}s</div>
+          <div className="timer">{timerValue}s</div>
         )}
         <div className="dual-container">
           {/* Left Commodity Card with AOS entry animation */}
+          {/* Key is role-scoped ("left-"/"right-" prefix, not just the
+              commodity name) — round-advance moves the right commodity's
+              data into left state, so without the prefix the two keys could
+              collide and React would reuse/mutate the DOM node across
+              slots instead of unmounting it, which is what caused stale
+              image/attribute glitches after a correct guess. */}
           <div
-            key={leftCommodity ? leftCommodity.name : "left-commodity"}
+            key={`left-${leftCommodity ? leftCommodity.name : "empty"}`}
             className="commodity-card dual-card"
             data-aos="fade-right"
-            data-aos-duration="800"
+            data-aos-duration={TIMING.CARD_ENTRY_MS}
           >
             {leftCommodity && (
               <>
@@ -316,11 +448,11 @@ const handleSingleAnswer = (choice) => {
           </div>
           {/* Right Commodity Card with AOS entry animation and delay */}
           <div
-            key={rightCommodity ? rightCommodity.name : "right-commodity"}
+            key={`right-${rightCommodity ? rightCommodity.name : "empty"}`}
             className="commodity-card dual-card"
             data-aos="fade-left"
-            data-aos-duration="800"
-            data-aos-delay="400"
+            data-aos-duration={TIMING.CARD_ENTRY_MS}
+            data-aos-delay={TIMING.ENTRY_STAGGER_MS}
           >
             {rightCommodity && (
               <>
@@ -352,12 +484,18 @@ const handleSingleAnswer = (choice) => {
           </div>
         )}
         {result && (
-          <div className={`result-overlay ${result}`}>
-            {result === "correct" ? "✔" : "✖"}
+          <div
+            className={`result-overlay ${result} ${
+              resultExiting ? "result-overlay-exit" : ""
+            }`}
+          >
+            <div className="result-icon">{result === "correct" ? "✔" : "✖"}</div>
+            {priceDelta && <div className="price-delta">{priceDelta}</div>}
           </div>
         )}
         <div className="score-board">
           <div className="high-score">High Score: {highScore}</div>
+          <div className="streak-count">Streak: {streak}</div>
           <div className="current-score">Score: {score}</div>
         </div>
         {/* Quit Button */}
@@ -370,13 +508,17 @@ const handleSingleAnswer = (choice) => {
     // Single Price Prediction UI.
     return (
       <div
-        className="wrapper"
+        className={`wrapper ${
+          gameMode === "Beat The Clock" ? "wrapper-with-timer" : ""
+        }`}
         ref={wrapperRef}
-        onMouseDown={handlePointerDown}
-        onMouseUp={handlePointerUp}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {gameMode === "Beat The Clock" && timerValue !== null && (
-          <div className="timer">⏳ {timerValue}s</div>
+          <div className="timer">{timerValue}s</div>
         )}
         <div className="single-container">
           {/* Single Commodity Card with AOS entry animation */}
@@ -384,7 +526,7 @@ const handleSingleAnswer = (choice) => {
             key={currentCommodity ? currentCommodity.name : "current-commodity"}
             className="commodity-card single-card"
             data-aos="fade-up"
-            data-aos-duration="800"
+            data-aos-duration={TIMING.CARD_ENTRY_MS}
           >
             {currentCommodity && (
               <>
@@ -407,11 +549,6 @@ const handleSingleAnswer = (choice) => {
        
         {!answerSubmitted && (
           <div className="single-buttons">
-            <br/>
-            <br/>
-            <br/>
-            <br/>
-            <br/>
             <button onClick={() => handleSingleAnswer("lower")}>
               Lower
             </button>
@@ -421,12 +558,18 @@ const handleSingleAnswer = (choice) => {
           </div>
         )}
         {result && (
-          <div className={`result-overlay ${result}`}>
-            {result === "correct" ? "✔" : "✖"}
+          <div
+            className={`result-overlay ${result} ${
+              resultExiting ? "result-overlay-exit" : ""
+            }`}
+          >
+            <div className="result-icon">{result === "correct" ? "✔" : "✖"}</div>
+            {priceDelta && <div className="price-delta">{priceDelta}</div>}
           </div>
         )}
         <div className="score-board">
           <div className="high-score">High Score: {highScore}</div>
+          <div className="streak-count">Streak: {streak}</div>
           <div className="current-score">Score: {score}</div>
         </div>
         {/* Quit Button */}
