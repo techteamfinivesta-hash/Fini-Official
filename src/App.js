@@ -10,6 +10,7 @@ import "./App.css";
 import Layout from "./NavbarFooter/Layout";
 import PopupMessage from "../src/Components/PopupMessage.js";
 
+
 // import Loader from './Loader/Loader';
 
 import Navbar from "./NavbarFooter/Navbar";
@@ -22,6 +23,7 @@ import Resources from "./Resources/Resources";
 import MoneyMasterclass from "./Resources/MoneyMasterclass/MoneyMasterclass";
 import Newsletter from "./Resources/Newsletter/newsletter";
 import FinWeek from "./FinWeek/finweek.js";
+import BiddingBlitz from "./Bidding_Blitz/bb.js";
 
 import Game from "./Games/Game.js";
 /*
@@ -149,6 +151,7 @@ const AppContent = () => {
 
           <Route path="/hackathon" element={<Hackathon/>}/>
           <Route path="/finweek" element={<FinWeek/>}/>
+          <Route path="/biddingblitz" element={<BiddingBlitz/>}/>
 
           
           <Route path="/resources" element={<Resources />} />

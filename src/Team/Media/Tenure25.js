@@ -44,7 +44,7 @@ const teamMembers = [
         img: 'https://res.cloudinary.com/dtoiqexe1/image/upload/v1756827762/creative_nishtha_5_qtpqav.png',
         imgOL: 'https://res.cloudinary.com/dtoiqexe1/image/upload/v1756827762/creative_nishtha_5_qtpqav.png',
         linkedin: "https://www.linkedin.com/in/mishthi-kainthola-206854288?",
-        instagram: "https://www.instagram.com/mishthi.kainthola/"
+        instagram: "https://www.instagram.com/thepahadipunjaban/"
       },
       {
         name: "Khushi Khorwal",

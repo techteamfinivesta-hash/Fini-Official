@@ -74,6 +74,14 @@
   padding: 2vw;
 }
 
+.year {
+  font-size: 3em;
+  margin: 20px 9vw;
+  text-align: center;
+  color: #fff;
+  text-decoration: underline #5f8e33;
+}
+
 .boxsmall {
   padding: 2vw;
   box-sizing: border-box;

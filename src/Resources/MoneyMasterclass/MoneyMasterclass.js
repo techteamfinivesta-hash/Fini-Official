@@ -10,8 +10,24 @@ import Session6 from "../Images/moneymasterclass/Session6.png";
 import Session7 from "../Images/moneymasterclass/Session07.jpeg";
 import MM1 from "../Images/moneymasterclass/MM1.png";
 import MM2 from "../Images/moneymasterclass/MM2.png";
+import MM3 from "../Images/moneymasterclass/MM3.png";
+import MM4 from "../Images/moneymasterclass/MM4.png";
 
 const mm = [
+  {
+    id: 11,
+    title: "MM4",
+    description: "Money Masterclass 2025-2026",
+    image: MM4,
+    link: "https://www.canva.com/design/DAHE224kPps/6OP_hFlEkPpXvwqeNWkoSg/view?utm_content=DAHE224kPps&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h63bbcf1b5f"
+  },
+  {
+    id: 10,
+    title: "MM3",
+    description: "Money Masterclass 2025-2026",
+    image: MM3,
+    link: "https://www.canva.com/design/DAHBTl_dmak/7dFIAp682X0FG2mhESdyKQ/view?utm_content=DAHBTl_dmak&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h11d429337a"
+  },
   {
     id: 9,
     title: "MM2",

@@ -1,0 +1,418 @@
+
+.bidding-blitz-page {
+  display: block;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow-x: clip;
+  background: #0b0d0b;
+  color: #f5f5f0;
+  box-sizing: border-box;
+  isolation: isolate;
+}
+
+.bidding-blitz-page *,
+.bidding-blitz-page *::before,
+.bidding-blitz-page *::after {
+  box-sizing: border-box;
+}
+
+/* Banner */
+.bidding-blitz-page .banner {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: clamp(90px, 25vw, 280px);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #0b0d0b;
+  background-image: url("./FiniLogo.png");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Hero */
+.bidding-blitz-page .hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+  height: auto;
+  min-height: auto;
+  min-width: 0;
+  margin: 0;
+  padding: clamp(40px, 7vw, 85px) 5%;
+  text-align: center;
+  background: #0b0d0b;
+  overflow: visible;
+}
+
+.bidding-blitz-page .hero-content {
+  display: block;
+  width: 100%;
+  max-width: 900px;
+  min-width: 0;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.bidding-blitz-page .hero h1 {
+  max-width: 100%;
+  margin: 0 0 18px;
+  padding: 0;
+  font-size: clamp(42px, 10vw, 112px);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.bidding-blitz-page .hero h1 span {
+  color: #71b139;
+}
+
+.bidding-blitz-page .hero-subtitle {
+  max-width: 100%;
+  margin: clamp(16px, 3vw, 28px) 0 0;
+  font-size: clamp(11px, 2vw, 16.5px);
+  font-weight: 800;
+  line-height: 1.6;
+  letter-spacing: clamp(0px, 0.2vw, 2px);
+  overflow-wrap: anywhere;
+}
+
+.bidding-blitz-page .hero-description {
+  width: 100%;
+  max-width: 340px;
+  margin: 14px auto 26px;
+  color: #a0a89e;
+  font-size: clamp(13px, 1.8vw, 15px);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.bidding-blitz-page .hero-index {
+  position: static;
+  margin-top: 30px;
+  color: #788174;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+}
+
+/* Labels */
+.bidding-blitz-page .eyebrow,
+.bidding-blitz-page .about-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #71b139;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.bidding-blitz-page .dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #71b139;
+}
+
+/* Buttons */
+.bidding-blitz-page .button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 15px 24px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.bidding-blitz-page .button:hover {
+  transform: translateY(-2px);
+}
+
+.bidding-blitz-page .button span {
+  margin-left: 4px;
+  color: inherit;
+}
+
+.bidding-blitz-page .button-primary {
+  background: #71b139;
+  color: #0b0d0b;
+}
+
+.bidding-blitz-page .button-primary:hover {
+  background: #d0ffa0;
+}
+
+.bidding-blitz-page .hero .button {
+  padding: 17px 30px;
+  font-size: 14px;
+}
+
+.bidding-blitz-page .button-outline {
+  margin-top: 8px;
+  border-color: #71b139;
+  color: #f5f5f0;
+  background: transparent;
+}
+
+.bidding-blitz-page .button-outline:hover {
+  background: #71b139;
+  color: #0b0d0b;
+}
+
+/* About */
+.bidding-blitz-page .about {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  margin: 0;
+  padding: clamp(45px, 7vw, 90px) 8% 0;
+  overflow: visible;
+  background: #1a1919;
+  color: #dfe8dd;
+}
+
+.bidding-blitz-page .about-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+  align-items: start;
+  gap: clamp(24px, 5vw, 65px);
+  width: 100%;
+  min-width: 0;
+  padding: 35px 0 65px;
+}
+
+.bidding-blitz-page .about h2 {
+  min-width: 0;
+  margin: 0;
+  font-size: clamp(32px, 5vw, 62px);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+}
+
+.bidding-blitz-page .about h2 span {
+  color: #4c792f;
+}
+
+.bidding-blitz-page .about-description {
+  width: 100%;
+  max-width: 450px;
+  min-width: 0;
+}
+
+.bidding-blitz-page .about-description p {
+  margin: 0 0 20px;
+  color: #fbfbfb;
+  font-size: clamp(15px, 1.6vw, 20px);
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+/* Registration */
+.bidding-blitz-page .register {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  margin: 0;
+  padding: clamp(50px, 7vw, 90px) 6%;
+  text-align: center;
+  background: #101410;
+}
+
+.bidding-blitz-page .register .eyebrow {
+  justify-content: center;
+  line-height: 1.6;
+}
+
+.bidding-blitz-page .register h2 {
+  margin: 24px 0 12px;
+  font-size: clamp(32px, 6vw, 66px);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+}
+
+.bidding-blitz-page .register p {
+  margin: 0 0 28px;
+  color: #a0a89e;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+/* Other elements */
+.bidding-blitz-page .strip-star {
+  font-size: 19px;
+}
+
+.bidding-blitz-page .green {
+  color: #71b139;
+}
+
+.bidding-blitz-page img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tablet and mobile */
+@media (max-width: 760px) {
+  .bidding-blitz-page .banner {
+    height: clamp(85px, 22vw, 155px);
+  }
+
+  .bidding-blitz-page .hero {
+    height: auto;
+    min-height: 0;
+    padding: 40px 6% 48px;
+    overflow: visible;
+  }
+
+  .bidding-blitz-page .hero-content {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .bidding-blitz-page .hero h1 {
+    margin-bottom: 16px;
+    font-size: clamp(40px, 10vw, 68px);
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+  }
+
+  .bidding-blitz-page .hero-subtitle {
+    margin-top: 18px;
+    font-size: clamp(10px, 2.6vw, 14px);
+    letter-spacing: 0.4px;
+  }
+
+  .bidding-blitz-page .hero-description {
+    max-width: 320px;
+    margin: 12px auto 22px;
+    font-size: 13px;
+  }
+
+  .bidding-blitz-page .hero .button {
+    padding: 14px 22px;
+    font-size: 13px;
+  }
+
+  .bidding-blitz-page .about {
+    padding: 42px 6% 0;
+  }
+
+  .bidding-blitz-page .about-content {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    padding: 25px 0 42px;
+  }
+
+  .bidding-blitz-page .about h2 {
+    font-size: clamp(30px, 7.5vw, 46px);
+    line-height: 1.1;
+    letter-spacing: -0.035em;
+  }
+
+  .bidding-blitz-page .about-description {
+    max-width: none;
+  }
+
+  .bidding-blitz-page .about-description p {
+    margin-bottom: 16px;
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  .bidding-blitz-page .register {
+    padding: 48px 6%;
+  }
+
+  .bidding-blitz-page .register h2 {
+    font-size: clamp(30px, 7.5vw, 48px);
+  }
+}
+
+/* Small phones */
+@media (max-width: 400px) {
+  .bidding-blitz-page .banner {
+    height: 85px;
+  }
+
+  .bidding-blitz-page .hero {
+    padding: 32px 5% 40px;
+  }
+
+  .bidding-blitz-page .hero h1 {
+    font-size: clamp(34px, 10vw, 40px);
+    letter-spacing: -0.035em;
+  }
+
+  .bidding-blitz-page .hero-subtitle {
+    font-size: 10px;
+    letter-spacing: 0.2px;
+  }
+
+  .bidding-blitz-page .hero-description {
+    font-size: 13px;
+  }
+
+  .bidding-blitz-page .about {
+    padding: 34px 5% 0;
+  }
+
+  .bidding-blitz-page .about h2 {
+    font-size: 29px;
+  }
+
+  .bidding-blitz-page .about-description p {
+    font-size: 14px;
+  }
+
+  .bidding-blitz-page .register h2 {
+    font-size: 30px;
+  }
+
+  .bidding-blitz-page .button {
+    padding: 13px 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bidding-blitz-page .button {
+    transition: none;
+  }
+
+  .bidding-blitz-page .button:hover {
+    transform: none;
+  }
+}

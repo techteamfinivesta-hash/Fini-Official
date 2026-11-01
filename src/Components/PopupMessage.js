@@ -20,11 +20,19 @@ export default function PopupMessage() {
     sessionStorage.setItem("popupShown", "true");
   };
 
+  
+  const handleBiddingBlitzClick = () => {
+    sessionStorage.setItem("popupShown", "true");
+    setShowPopup(false);
+    navigate("/biddingblitz");
+  };
+
+
   const handleNewsletterClick = () => {
     setShowPopup(false);
     // Set the flag before navigation
     sessionStorage.setItem("popupShown", "true");
-    navigate("/finweek");
+    navigate("/resources/newsletter");
   };
 
   if (!showPopup) return null;
@@ -39,11 +47,11 @@ export default function PopupMessage() {
           ✕
         </button>
 
-        <h2>FinWeek 2.0</h2>
-        <p>Finivesta's presents FinWeek 2.0 with various exciting events!<br></br>Click on the banner to know more details</p>
+        <h2>Register Now</h2>
+        <p>Bidding Blitz is live!</p>
         <br/>
         <button
-          onClick={handleNewsletterClick}
+          onClick={handleBiddingBlitzClick}
           className="button"
         >
           Check out
