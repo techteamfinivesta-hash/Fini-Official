@@ -121,7 +121,7 @@ const Home = () => {
         <p className="abc">
               Finivesta, the Finance and Economics society of IGDTUW, is a
               women-led organization that provides students with various
-              opportunities that helps them to enhance their financial
+              opportunities that help them  enhance their financial
               knowledge, gain practical insights through workshops, seminars,
               events and competitions with the aim of encapsulating financial 
               principles, patience, risk management in bright young minds. 
