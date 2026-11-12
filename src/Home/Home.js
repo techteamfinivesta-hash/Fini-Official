@@ -124,7 +124,7 @@ const Home = () => {
               opportunities that helps them to enhance their financial
               knowledge, gain practical insights through workshops, seminars,
               events and competitions with the aim of encapsulating financial 
-              principles, patience and risk management in bright young minds. 
+              principles, patience & risk management in bright young minds. 
               We aim for excellence across all financial fields, helping students 
               connect with key stakeholders while cultivating passion and self-investment in young minds.
             </p>
